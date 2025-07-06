@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from database import engine
 from models import Base
 from routers import admin, quiz, auth, admin_web
@@ -7,10 +8,31 @@ from routers import admin, quiz, auth, admin_web
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+# Define OAuth2 scheme for Swagger UI
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+
 app = FastAPI(
     title="Quiz Application API",
     description="A comprehensive quiz application with admin dashboard and public quiz functionality",
-    version="1.0.0"
+    version="1.0.0",
+    openapi_tags=[
+        {
+            "name": "authentication",
+            "description": "Authentication operations"
+        },
+        {
+            "name": "admin",
+            "description": "Admin operations"
+        },
+        {
+            "name": "quiz",
+            "description": "Public quiz operations"
+        },
+        {
+            "name": "admin-web",
+            "description": "Admin web interface"
+        }
+    ]
 )
 
 # Add CORS middleware
