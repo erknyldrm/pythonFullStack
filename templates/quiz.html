@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .category-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            border-color: #4facfe;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .category-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .category-card p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .category-card .question-count {
+            background: #4facfe;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .quiz-section {
+            display: none;
+        }
+
+        .quiz-section.active {
+            display: block;
+        }
+
+        .question-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .question-number {
+            background: #4facfe;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .option:hover {
+            border-color: #4facfe;
+            background: #f8f9fa;
+        }
+
+        .option.selected {
+            border-color: #4facfe;
+            background: #e3f2fd;
+        }
+
+        .option-label {
+            background: #4facfe;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #4facfe;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3a8bfe;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .result-section {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .result-score {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4facfe;
+            margin-bottom: 20px;
+        }
+
+        .result-details {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4facfe;
+            transition: width 0.3s ease;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Quiz Application</h1>
+            <p>Test your knowledge in various categories</p>
+        </div>
+
+        <div class="content">
+            <!-- Category Selection -->
+            <div id="categorySelection">
+                <h2>Choose a Category</h2>
+                <div id="categoriesGrid" class="category-grid">
+                    Loading categories...
+                </div>
+            </div>
+
+            <!-- Quiz Section -->
+            <div id="quizSection" class="quiz-section">
+                <button class="back-btn" onclick="showCategories()">← Back to Categories</button>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="questionsContainer"></div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button id="submitBtn" class="btn btn-primary" onclick="submitQuiz()" style="display: none;">Submit Quiz</button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultSection" class="quiz-section">
+                <div class="result-section">
+                    <div id="resultContent"></div>
+                    <button class="btn btn-primary" onclick="showCategories()">Take Another Quiz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCategory = null;
+        let currentQuestions = [];
+        let userAnswers = {};
+        let currentQuestionIndex = 0;
+
+        // Load categories on page load
+        window.addEventListener('load', loadCategories);
+
+        async function loadCategories() {
+            try {
+                const response = await fetch('/quiz/categories/');
+                const categories = await response.json();
+                
+                const grid = document.getElementById('categoriesGrid');
+                if (categories.length === 0) {
+                    grid.innerHTML = '<p>No categories available.</p>';
+                    return;
+                }
+
+                let html = '';
+                categories.forEach(category => {
+                    html += `
+                        <div class="category-card" onclick="startQuiz(${category.id})">
+                            <h3>${category.name}</h3>
+                            <p>${category.description || 'Test your knowledge in this category'}</p>
+                            <div class="question-count">${category.question_count} Questions</div>
+                        </div>
+                    `;
+                });
+                grid.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                document.getElementById('categoriesGrid').innerHTML = '<p>Error loading categories.</p>';
+            }
+        }
+
+        async function startQuiz(categoryId) {
+            try {
+                const response = await fetch(`/quiz/random/${categoryId}?limit=10`);
+                const questions = await response.json();
+                
+                if (questions.length === 0) {
+                    alert('No questions available for this category.');
+                    return;
+                }
+
+                currentCategory = categoryId;
+                currentQuestions = questions;
+                userAnswers = {};
+                currentQuestionIndex = 0;
+
+                showQuiz();
+                displayQuestion();
+            } catch (error) {
+                console.error('Error starting quiz:', error);
+                alert('Error starting quiz. Please try again.');
+            }
+        }
+
+        function showQuiz() {
+            document.getElementById('categorySelection').style.display = 'none';
+            document.getElementById('quizSection').classList.add('active');
+            document.getElementById('resultSection').classList.remove('active');
+        }
+
+        function showCategories() {
+            document.getElementById('categorySelection').style.display = 'block';
+            document.getElementById('quizSection').classList.remove('active');
+            document.getElementById('resultSection').classList.remove('active');
+        }
+
+        function displayQuestion() {
+            const question = currentQuestions[currentQuestionIndex];
+            const container = document.getElementById('questionsContainer');
+            
+            const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            let html = `
+                <div class="question-card">
+                    <div class="question-number">Question ${currentQuestionIndex + 1} of ${currentQuestions.length}</div>
+                    <div class="question-text">${question.question_text}</div>
+                    <div class="options">
+            `;
+
+            const options = [
+                { label: 'A', text: question.option_a },
+                { label: 'B', text: question.option_b },
+                { label: 'C', text: question.option_c },
+                { label: 'D', text: question.option_d }
+            ];
+
+            options.forEach(option => {
+                const isSelected = userAnswers[question.id] === option.label;
+                html += `
+                    <div class="option ${isSelected ? 'selected' : ''}" onclick="selectAnswer(${question.id}, '${option.label}')">
+                        <div class="option-label">${option.label}</div>
+                        <div>${option.text}</div>
+                    </div>
+                `;
+            });
+
+            html += '</div></div>';
+            container.innerHTML = html;
+
+            // Show/hide navigation buttons
+            const submitBtn = document.getElementById('submitBtn');
+            if (currentQuestionIndex === currentQuestions.length - 1) {
+                submitBtn.style.display = 'inline-block';
+            } else {
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        function selectAnswer(questionId, answer) {
+            userAnswers[questionId] = answer;
+            
+            // Update visual selection
+            const options = document.querySelectorAll('.option');
+            options.forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            event.target.closest('.option').classList.add('selected');
+        }
+
+        async function submitQuiz() {
+            const answers = Object.keys(userAnswers).map(questionId => ({
+                question_id: parseInt(questionId),
+                selected_answer: userAnswers[questionId]
+            }));
+
+            if (answers.length === 0) {
+                alert('Please answer at least one question.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/quiz/submit/${currentCategory}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(answers)
+                });
+
+                const result = await response.json();
+                showResults(result);
+            } catch (error) {
+                console.error('Error submitting quiz:', error);
+                alert('Error submitting quiz. Please try again.');
+            }
+        }
+
+        function showResults(result) {
+            document.getElementById('quizSection').classList.remove('active');
+            document.getElementById('resultSection').classList.add('active');
+
+            const resultContent = document.getElementById('resultContent');
+            const percentage = result.score_percentage;
+            
+            let emoji = '😊';
+            if (percentage >= 80) emoji = '🎉';
+            else if (percentage >= 60) emoji = '👍';
+            else if (percentage >= 40) emoji = '😐';
+            else emoji = '😔';
+
+            resultContent.innerHTML = `
+                <div class="result-score">${emoji} ${percentage}%</div>
+                <div class="result-details">
+                    <p>You got <strong>${result.correct_answers}</strong> out of <strong>${result.total_questions}</strong> questions correct!</p>
+                    <p>Category: <strong>${result.category_name}</strong></p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 
