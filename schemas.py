@@ -99,6 +99,65 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
+# Enhanced Admin Registration schemas
+class AdminUserCreateEnhanced(AdminUserBase):
+    password: str
+    confirm_password: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: Optional[str] = "admin"  # admin, super_admin, moderator
+
+
+class AdminInvitation(BaseModel):
+    email: str
+    role: str = "admin"
+    invited_by: Optional[int] = None
+
+
+class AdminInvitationResponse(BaseModel):
+    invitation_id: str
+    email: str
+    role: str
+    expires_at: datetime
+    invited_by: Optional[str] = None
+
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class PasswordReset(BaseModel):
+    token: str
+    new_password: str
+    confirm_password: str
+
+
+class EmailVerification(BaseModel):
+    token: str
+
+
+class AdminRegistrationResponse(BaseModel):
+    user: AdminUser
+    message: str
+    requires_email_verification: bool = False
+
+
+class AdminUserProfile(BaseModel):
+    id: int
+    username: str
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: str
+    is_active: bool
+    is_email_verified: bool
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
 # Quiz schemas
 class QuizQuestion(BaseModel):
     id: int

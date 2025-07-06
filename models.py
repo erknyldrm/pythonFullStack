@@ -41,6 +41,29 @@ class AdminUser(Base):
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    first_name = Column(String(50), nullable=True)
+    last_name = Column(String(50), nullable=True)
+    role = Column(String(20), default="admin")  # admin, super_admin, moderator
     is_active = Column(Boolean, default=True)
+    is_email_verified = Column(Boolean, default=False)
+    email_verification_token = Column(String(255), nullable=True)
+    password_reset_token = Column(String(255), nullable=True)
+    password_reset_expires = Column(DateTime(timezone=True), nullable=True)
+    last_login = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now()) 
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class AdminInvitation(Base):
+    __tablename__ = "admin_invitations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    invitation_id = Column(String(255), unique=True, index=True, nullable=False)
+    email = Column(String(100), nullable=False)
+    role = Column(String(20), default="admin")
+    invited_by = Column(Integer, ForeignKey("admin_users.id"), nullable=True)
+    is_used = Column(Boolean, default=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    inviter = relationship("AdminUser", foreign_keys=[invited_by]) 

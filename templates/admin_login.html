@@ -141,7 +141,7 @@
         </form>
 
         <div class="register-link">
-            <p>Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+            <p>Don't have an account? <a href="/admin/register">Register here</a></p>
         </div>
     </div>
 
@@ -172,72 +172,7 @@
             }
         });
 
-        function showRegister() {
-            // Simple registration form
-            const container = document.querySelector('.login-container');
-            container.innerHTML = `
-                <div class="login-header">
-                    <h1>🎯 Quiz Admin</h1>
-                    <p>Create a new admin account</p>
-                </div>
 
-                <div id="alert"></div>
-
-                <form id="registerForm">
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Register</button>
-                </form>
-
-                <div class="register-link">
-                    <p>Already have an account? <a href="#" onclick="showLogin()">Sign in here</a></p>
-                </div>
-            `;
-
-            document.getElementById('registerForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const formData = {
-                    username: document.getElementById('username').value,
-                    email: document.getElementById('email').value,
-                    password: document.getElementById('password').value
-                };
-
-                try {
-                    const response = await fetch('/auth/register', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formData)
-                    });
-
-                    if (response.ok) {
-                        showAlert('Registration successful! Please sign in.', 'success');
-                        setTimeout(() => showLogin(), 2000);
-                    } else {
-                        const error = await response.json();
-                        showAlert(error.detail || 'Registration failed', 'error');
-                    }
-                } catch (error) {
-                    showAlert('Registration failed. Please try again.', 'error');
-                }
-            });
-        }
-
-        function showLogin() {
-            window.location.reload();
-        }
 
         function showAlert(message, type) {
             const alertDiv = document.getElementById('alert');

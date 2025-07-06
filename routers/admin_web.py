@@ -15,6 +15,12 @@ async def admin_login(request: Request):
     return templates.TemplateResponse("admin_login.html", {"request": request})
 
 
+@router.get("/register", response_class=HTMLResponse)
+async def admin_register(request: Request):
+    """Serve the admin registration page"""
+    return templates.TemplateResponse("admin_register.html", {"request": request})
+
+
 @router.get("/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
     """Serve the admin dashboard page"""
