@@ -41,6 +41,26 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
+# --- Refresh Token Logic ---
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=7)
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key + "_refresh", algorithm=settings.algorithm)
+    return encoded_jwt
+
+def verify_refresh_token(token: str):
+    try:
+        payload = jwt.decode(token, settings.secret_key + "_refresh", algorithms=[settings.algorithm])
+        if payload.get("type") != "refresh":
+            raise JWTError("Not a refresh token")
+        return payload
+    except JWTError:
+        return None
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
