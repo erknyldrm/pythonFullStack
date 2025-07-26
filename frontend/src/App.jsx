@@ -66,18 +66,6 @@ function isTokenExpired(token) {
   }
 }
 
-// Placeholder for refresh token logic
-function getRefreshToken() {
-  return localStorage.getItem('refresh_token');
-}
-function setRefreshToken(token) {
-  localStorage.setItem('refresh_token', token);
-}
-function removeRefreshToken() {
-  localStorage.removeItem('refresh_token');
-}
-// TODO: Implement refresh token logic if backend supports it
-
 // Signup Page Component
 function Signup() {
   const [form, setForm] = useState({
@@ -176,6 +164,7 @@ function Login({ onLogin }) {
       params.append('password', form.password);
       const res = await axios.post(`${API_BASE}/auth/token`, params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        withCredentials: true,
       });
       setToken(res.data.access_token);
       setLoading(false);
@@ -384,31 +373,48 @@ export default function App() {
   const [checking, setChecking] = useState(true);
   const [sessionMessage, setSessionMessage] = useState('');
 
+  // Helper: Try to refresh access token using cookie
+  async function tryRefreshToken() {
+    try {
+      const res = await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
+      setToken(res.data.access_token);
+      return true;
+    } catch {
+      removeToken();
+      setUser(null);
+      setSessionMessage('Session expired. Please log in again.');
+      return false;
+    }
+  }
+
   // Check token on mount and at interval
   useEffect(() => {
-    function checkSession() {
+    async function checkSession() {
       const token = getToken();
       if (token) {
         if (isTokenExpired(token)) {
-          removeToken();
-          setUser(null);
-          setSessionMessage('Session expired. Please log in again.');
-          setChecking(false);
-        } else {
-          axios.get(`${API_BASE}/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-            .then(res => {
-              setUser(res.data);
-              setChecking(false);
-            })
-            .catch(() => {
-              removeToken();
-              setUser(null);
-              setSessionMessage('Session expired or invalid. Please log in again.');
-              setChecking(false);
-            });
+          // Try to refresh
+          const refreshed = await tryRefreshToken();
+          if (!refreshed) {
+            setChecking(false);
+            return;
+          }
         }
+        // After refresh, get the (possibly new) token
+        const validToken = getToken();
+        axios.get(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${validToken}` },
+        })
+          .then(res => {
+            setUser(res.data);
+            setChecking(false);
+          })
+          .catch(() => {
+            removeToken();
+            setUser(null);
+            setSessionMessage('Session expired or invalid. Please log in again.');
+            setChecking(false);
+          });
       } else {
         setChecking(false);
       }
@@ -422,9 +428,23 @@ export default function App() {
     const token = getToken();
     if (token) {
       if (isTokenExpired(token)) {
-        removeToken();
-        setUser(null);
-        setSessionMessage('Session expired. Please log in again.');
+        tryRefreshToken().then(refreshed => {
+          if (refreshed) {
+            const validToken = getToken();
+            axios.get(`${API_BASE}/auth/me`, {
+              headers: { Authorization: `Bearer ${validToken}` },
+            })
+              .then(res => {
+                setUser(res.data);
+                setSessionMessage('');
+              })
+              .catch(() => {
+                removeToken();
+                setUser(null);
+                setSessionMessage('Session expired or invalid. Please log in again.');
+              });
+          }
+        });
       } else {
         axios.get(`${API_BASE}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -442,10 +462,13 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     removeToken();
     setUser(null);
     setSessionMessage('You have been logged out.');
+    try {
+      await axios.post(`${API_BASE}/auth/logout`, {}, { withCredentials: true });
+    } catch {}
   };
 
   if (checking) return <div style={appStyle}><div style={cardStyle}>Checking session...</div></div>;

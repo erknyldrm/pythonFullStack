@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Body
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Body, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -59,9 +59,9 @@ def generate_secure_token() -> str:
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    response: Response = None
 ):
-    """Login endpoint for admin users"""
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -69,11 +69,8 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Update last login
     user.last_login = datetime.utcnow()
     db.commit()
-    
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
@@ -82,14 +79,27 @@ async def login_for_access_token(
     refresh_token = create_refresh_token(
         data={"sub": user.username}, expires_delta=refresh_token_expires
     )
-    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+    # Set refresh token as HTTP-only cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=7*24*60*60
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 # --- Refresh Token Endpoint ---
 
 @router.post("/refresh", response_model=Token)
 async def refresh_access_token(
-    refresh_token: str = Body(..., embed=True)
+    request: Request,
+    response: Response
 ):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token cookie found")
     payload = verify_refresh_token(refresh_token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
@@ -100,8 +110,21 @@ async def refresh_access_token(
     access_token = create_access_token(
         data={"sub": username}, expires_delta=access_token_expires
     )
-    # Optionally, issue a new refresh token here
-    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+    # Optionally, issue a new refresh token and set cookie again
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=7*24*60*60
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("refresh_token")
+    return {"message": "Logged out"}
 
 
 @router.post("/register", response_model=AdminRegistrationResponse)
