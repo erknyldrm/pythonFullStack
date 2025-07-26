@@ -1,3 +1,6 @@
+# This project has written by Cursor AI
+
+
 # Quiz Application
 
 A comprehensive quiz web application built with FastAPI, PostgreSQL, and a modern admin dashboard. This application provides both API endpoints for mobile applications and a web-based admin interface for managing quiz content.
